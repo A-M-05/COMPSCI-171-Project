@@ -25,3 +25,31 @@ class StudentAI():
         move = moves[index][inner_index]
         self.board.make_move(move,self.color)
         return move
+
+
+
+
+    #we will need to define a heurisitic for evalutaion
+    def eval_board(self):
+
+
+        #taking a piece is higher value
+        #this is forced so it's ok, I'm not sure if it optimizes which way to take though.
+
+        #making a king is higher value
+
+
+        
+        #positions closer to the center of the board can be higher values
+
+
+        pass
+
+
+
+
+    #start off with minmax
+
+
+
+    #grow to monte carlo for better simulations
