@@ -35,13 +35,26 @@ class StudentAI():
         # self.evaluate_board()
         # return move
 
-        num = self.minimax(self.color)
-        print(num)
-        return num
+        maxsofar = -100000
+        best_move = None
+        moves = self.board.get_all_possible_moves(self.color)
+        print(moves)
+        for i  in range(len(moves)):
+            for j in range(len(moves[i])):
+                print(moves[i][j])
+                self.board.make_move(moves[i][j], self.color)
+                value = self.minimax(self.color)
+                self.board.undo()
+                if value > maxsofar:
+                    maxsofar = value
+                    best_move = moves[i][j]
+                    
+        print(best_move)
+        return best_move
 
     def minimax(self, color, depth = 3):
         if depth == 0:
-            return self.evaluate_color(self.color)
+            return self.evaluate_color(color)
         
         if color == self.color: #1 is black, #2 is white
             best_value = -10000
@@ -60,12 +73,11 @@ class StudentAI():
         else:
             best_value = 10000
             
-            for piece in self.board.get_all_possible_moves(self.opponent[color]):
+            for piece in self.board.get_all_possible_moves(color):
                 for move in piece:
                     # we already have a function for this
-                    self.board.make_move(move, self.opponent[color])
-                    val = -1 * self.minimax(color, depth-1)
-            
+                    self.board.make_move(move, color)
+                    val = self.minimax(self.opponent[color], depth-1)
                     if val < best_value:
                         best_value = val
                     self.board.undo()
@@ -76,11 +88,10 @@ class StudentAI():
     def evaluate_color(self, color):
         #self.color black = 1, white = 2
         
-        # check if win for curr player
-        if self.board.is_win(self.color):
+        result = self.board.is_win(color)
+        if result == color:
             return 10000
-        # check if win for other player
-        elif self.board.is_win(self.opponent[self.color]):
+        elif result == self.opponent[color]:
             return -10000
         
         # check all pieces of self.color
