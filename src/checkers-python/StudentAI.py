@@ -73,8 +73,6 @@ class StudentAI():
         return best_value
             
 
-        
-
     def evaluate_color(self, color):
         #self.color black = 1, white = 2
         
