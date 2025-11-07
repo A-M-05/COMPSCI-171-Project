@@ -14,17 +14,10 @@ class StudentAI():
         self.color = ''
         self.opponent = {1:2,2:1}
         self.color = 2
-    def get_move(self,move):
-        if len(move) != 0:
-            self.board.make_move(move,self.opponent[self.color])
-        else:
-            self.color = 1
-        moves = self.board.get_all_possible_moves(self.color)
-        index = randint(0,len(moves)-1)
-        inner_index =  randint(0,len(moves[index])-1)
-        move = moves[index][inner_index]
-        self.board.make_move(move,self.color)
-        return move
+        self.WIN_SCORE  = 100000
+        self.LOSS_SCORE = -100000
+
+    
 
 
 
@@ -60,5 +53,57 @@ class StudentAI():
 
         return my_score - opp_score
 
+    def minimax(self, color) -> Move:
+        to_move = self.color
+        value, move = self.maxim(color);
+        return move
 
+    def maxim(self, color):
+        if self.board.is_win(self.color): 
+            return (1000000, None)
+        val = -1000000000
+        best_move = None
+        moves = self.board.get_all_possible_moves(color)
+        for piece in moves:
+            for move in piece:
+                v2 = self.minim(self.opponent[color])
+                if v2 > val:
+                    val, best_move = v2, move
+        return val, best_move
     
+    def minim(self, color):
+        opp = self.opponent[self.color]
+        if self.board.is_win(self.color): 
+            return (1000000, None)
+        val = -1000000000
+        best_move = None
+        moves = self.board.get_all_possible_moves(color)
+        for piece in moves:
+            for move in piece:
+                v2 = self.maxim(self.opponent[color])
+                if v2 < val:
+                    val, best_move = v2, move
+        return val, best_move
+
+
+    def eval_move(self, move, color):
+        self.board.make_move(move)
+        val = self.evaluate_color(color)
+        self.board.undo()
+        return val
+    
+    def get_move(self, move):
+        if len(move) != 0:
+            self.board.make_move(move,self.opponent[self.color])
+        else:
+            self.color = 1
+        print(self.board.get_all_possible_moves(self.color))
+        print(self.board.get_all_possible_moves(self.opponent[self.color]))
+        # moves = self.board.get_all_possible_moves(self.color)
+        # index = randint(0,len(moves)-1)
+        # inner_index =  randint(0,len(moves[index])-1)
+        # move = moves[index][inner_index]
+        # self.board.make_move(move,self.color)
+        
+        score, move = self.minimax(self.color)
+        return move
