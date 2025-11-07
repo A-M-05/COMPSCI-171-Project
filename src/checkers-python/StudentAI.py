@@ -54,15 +54,18 @@ class StudentAI():
         return my_score - opp_score
 
     def minimax(self, color, alpha, beta, depth = 4) -> Move:
-        to_move = self.color
         value, move = self.maxim(color, alpha, beta, depth);
         return move
 
     def maxim(self, color, alpha, beta, depth):
+        
         if depth == 0:
-            return (self.evaluate_color(color), None)
-        if self.board.is_win(color): 
-            return (1000000, None)
+            return (self.evaluate_color(self.color), None)
+        if self.board.is_win(self.color): 
+            return (10000000, None)
+        opp = self.opponent[self.color]
+        if self.board.is_win(opp): 
+            return (-10000000, None)
         val = -1000000000
         best_move = None
         moves = self.board.get_all_possible_moves(color)
@@ -83,9 +86,11 @@ class StudentAI():
     def minim(self, color, alpha, beta, depth):
         opp = self.opponent[self.color]
         if depth == 0:
-            return (self.evaluate_color(color), None)
+            return (self.evaluate_color(self.color), None)
         if self.board.is_win(self.color): 
-            return (1000000, None)
+            return (10000000, None)
+        if self.board.is_win(opp): 
+            return (-10000000, None)
         val = 1000000000
         best_move = None
         moves = self.board.get_all_possible_moves(color)
