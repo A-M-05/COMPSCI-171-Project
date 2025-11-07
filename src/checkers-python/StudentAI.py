@@ -25,3 +25,40 @@ class StudentAI():
         move = moves[index][inner_index]
         self.board.make_move(move,self.color)
         return move
+
+
+
+    def evaluate_color(self, color):
+        """
+        Returns a static evaluation of the board from the perspective of `color`.
+        Positive score = good for `color`.
+        Negative score = bad for `color`.
+        """
+
+        # Convert 1/2 → 'B'/'W'
+        my = 'B' if color == 1 else 'W'
+        opp = 'W' if color == 1 else 'B'
+
+        my_score = 0
+        opp_score = 0
+
+        # --- MATERIAL + KING VALUE ---
+        for r in range(self.board.row):
+            for c in range(self.board.col):
+                chk = self.board.board[r][c]
+                if chk.color == my:
+                    my_score += 3 if chk.is_king else 1
+                elif chk.color == opp:
+                    opp_score += 3 if chk.is_king else 1
+
+        # --- MOBILITY BONUS ---
+        my_moves = self.board.get_all_possible_moves(color)
+        opp_moves = self.board.get_all_possible_moves(self.opponent[color])
+
+        my_score += 0.1 * sum(len(g) for g in my_moves)
+        opp_score += 0.1 * sum(len(g) for g in opp_moves)
+
+        return my_score - opp_score
+
+
+    
