@@ -53,36 +53,54 @@ class StudentAI():
 
         return my_score - opp_score
 
-    def minimax(self, color) -> Move:
+    def minimax(self, color, alpha, beta, depth = 4) -> Move:
         to_move = self.color
-        value, move = self.maxim(color);
+        value, move = self.maxim(color, alpha, beta, depth);
         return move
 
-    def maxim(self, color):
-        if self.board.is_win(self.color): 
+    def maxim(self, color, alpha, beta, depth):
+        if depth == 0:
+            return (self.evaluate_color(color), None)
+        if self.board.is_win(color): 
             return (1000000, None)
         val = -1000000000
         best_move = None
         moves = self.board.get_all_possible_moves(color)
+        if not moves:
+            return (-100000000, None)
         for piece in moves:
             for move in piece:
-                v2 = self.minim(self.opponent[color])
+                self.board.make_move(move, color)
+                v2, _ = self.minim(self.opponent[color], alpha, beta, depth-1)
+                self.board.undo()
                 if v2 > val:
                     val, best_move = v2, move
+                alpha = max(alpha, v2)
+                if beta <= alpha:
+                    break
         return val, best_move
     
-    def minim(self, color):
+    def minim(self, color, alpha, beta, depth):
         opp = self.opponent[self.color]
+        if depth == 0:
+            return (self.evaluate_color(color), None)
         if self.board.is_win(self.color): 
             return (1000000, None)
-        val = -1000000000
+        val = 1000000000
         best_move = None
         moves = self.board.get_all_possible_moves(color)
+        if not moves:
+            return (1000000000, None)
         for piece in moves:
             for move in piece:
-                v2 = self.maxim(self.opponent[color])
+                self.board.make_move(move, color)
+                v2, _ = self.maxim(self.opponent[color], alpha, beta, depth-1)
+                self.board.undo()
                 if v2 < val:
                     val, best_move = v2, move
+                beta = min(beta, v2)
+                if beta <= alpha:
+                    break
         return val, best_move
 
 
@@ -105,5 +123,7 @@ class StudentAI():
         # move = moves[index][inner_index]
         # self.board.make_move(move,self.color)
         
-        score, move = self.minimax(self.color)
+        move = self.minimax(self.color, -10000000, 1000000, 4)
+        self.board.make_move(move, self.color)
+        print(move)
         return move
