@@ -14,7 +14,9 @@ for i in range(NUM_GAMES):
             "python3", "AI_Runner.py",
             "8", "8", "3", "l",    # 8x8 board, 2-player local
             "../src/checkers-python/main.py",  # Player 1: your AI
-            "Sample_AIs/Random_AI/main.py"     # Player 2: opponent
+            # "../src/copy/main.py",
+            "Sample_AIs/Random_AI/main.py",     # Player 2: opponent
+            # "Sample_AIs/Random_AI/main.py"  
         ],
         capture_output=True,
         text=True
