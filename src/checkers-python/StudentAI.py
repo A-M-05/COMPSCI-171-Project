@@ -3,6 +3,10 @@ from BoardClasses import Move
 from BoardClasses import Board
 #The following part should be completed by students.
 #Students can modify anything except the class name and exisiting functions and varibles.
+
+BEST_POINTS = 10000000
+WORST_POINTS = -10000000
+
 class StudentAI():
 
     def __init__(self,col,row,p):
@@ -17,9 +21,6 @@ class StudentAI():
         self.WIN_SCORE  = 100000
         self.LOSS_SCORE = -100000
 
-    
-
-
 
     def evaluate_color(self, color):
         """
@@ -28,23 +29,23 @@ class StudentAI():
         Negative score = bad for `color`.
         """
 
-        # Convert 1/2 → 'B'/'W'
+        # convert 1/2 to black or white
         my = 'B' if color == 1 else 'W'
         opp = 'W' if color == 1 else 'B'
 
         my_score = 0
         opp_score = 0
 
-        # --- MATERIAL + KING VALUE ---
-        for r in range(self.board.row):
-            for c in range(self.board.col):
-                chk = self.board.board[r][c]
-                if chk.color == my:
-                    my_score += 3 if chk.is_king else 1
-                elif chk.color == opp:
-                    opp_score += 3 if chk.is_king else 1
+        # Material Points, kings are worth more
+        for i in range(self.board.row):
+            for j in range(self.board.col):
+                checker = self.board.board[i][j]
+                if checker.color == my:
+                    my_score += 3 if checker.is_king else 1
+                elif checker.color == opp:
+                    opp_score += 3 if checker.is_king else 1
 
-        # --- MOBILITY BONUS ---
+        # Mobility points (the more ways you can move the more you get)
         my_moves = self.board.get_all_possible_moves(color)
         opp_moves = self.board.get_all_possible_moves(self.opponent[color])
 
@@ -62,15 +63,15 @@ class StudentAI():
         if depth == 0:
             return (self.evaluate_color(self.color), None)
         if self.board.is_win(self.color): 
-            return (10000000, None)
+            return (BEST_POINTS, None)
         opp = self.opponent[self.color]
         if self.board.is_win(opp): 
-            return (-10000000, None)
-        val = -1000000000
+            return (WORST_POINTS, None)
+        val = WORST_POINTS
         best_move = None
         moves = self.board.get_all_possible_moves(color)
         if not moves:
-            return (-100000000, None)
+            return (WORST_POINTS, None)
         for piece in moves:
             for move in piece:
                 self.board.make_move(move, color)
@@ -88,14 +89,14 @@ class StudentAI():
         if depth == 0:
             return (self.evaluate_color(self.color), None)
         if self.board.is_win(self.color): 
-            return (10000000, None)
+            return (BEST_POINTS, None)
         if self.board.is_win(opp): 
-            return (-10000000, None)
-        val = 1000000000
+            return (WORST_POINTS, None)
+        val = BEST_POINTS
         best_move = None
         moves = self.board.get_all_possible_moves(color)
         if not moves:
-            return (1000000000, None)
+            return (BEST_POINTS, None)
         for piece in moves:
             for move in piece:
                 self.board.make_move(move, color)
@@ -126,7 +127,7 @@ class StudentAI():
         # move = moves[index][inner_index]
         # self.board.make_move(move,self.color)
             
-        move = self.minimax(self.color, -10000000, 1000000, 2)
+        move = self.minimax(self.color, WORST_POINTS, BEST_POINTS, 4)
 
         if move is None:
             # Get all possible moves as fallback
