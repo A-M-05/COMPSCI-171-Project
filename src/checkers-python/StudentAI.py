@@ -11,7 +11,7 @@ MOBILITY_WEIGHT = 3
 VULNERABILITY_WEIGHT = -15
 
 LOSS_SCORE = -100_000
-MAX_SEARCH_DEPTH = 7
+MAX_SEARCH_DEPTH = 2
 
 class StudentAI():
 
@@ -110,16 +110,16 @@ class StudentAI():
                 else:
                     if is_king: opp_kings += 1
                     else:       opp_men   += 1
-        material = (my_men - opp_men) * REGULAR_VALUE + (my_kings - opp_kings) * KING_VALUE
+        material = my_men * REGULAR_VALUE + my_kings * KING_VALUE
 
         # points based on the mobility of our pieces vs opps pieces
-        my_groups  = self.board.get_all_possible_moves(color)
-        opp_groups = self.board.get_all_possible_moves(opp)
-        my_moves   = sum(len(g) for g in my_groups)
-        opp_moves  = sum(len(g) for g in opp_groups)
-        mobility   = (my_moves - opp_moves) * MOBILITY_WEIGHT
+        # my_groups  = self.board.get_all_possible_moves(color)
+        # opp_groups = self.board.get_all_possible_moves(opp)
+        # my_moves   = sum(len(g) for g in my_groups)
+        # opp_moves  = sum(len(g) for g in opp_groups)
+        # mobility   = (my_moves - opp_moves) * MOBILITY_WEIGHT
 
-        return material + mobility
+        return material # + mobility
     
     # -------------------- MINIMAX --------------------
     def minimax(self, color: int, depth: int, alpha: float = float("-inf"), beta: float = float("inf")) -> float:
