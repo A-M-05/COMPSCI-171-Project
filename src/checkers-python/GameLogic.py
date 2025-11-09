@@ -38,7 +38,7 @@ class GameLogic:
             try:
                 board.make_move(move,player)
             except InvalidMoveError:
-                print("Invalid Move!  a",file=fh)
+                print("Invalid Move!",file=fh)
                 print(move)
                 if player == 1:
                     winPlayer = 2
