@@ -12,10 +12,11 @@ for i in range(NUM_GAMES):
     result = subprocess.run(
         [
             "python3", "AI_Runner.py",
-            "8", "8", "3", "l",    # 8x8 board, 2-player local
+            "5", "5", "3", "l",    # 8x8 board, 2-player local
             "../src/checkers-python/main.py",  # Player 1: your AI
+            "Sample_AIs/Poor_AI/main.py"
             # "../src/copy/main.py",
-            "Sample_AIs/Random_AI/main.py",     # Player 2: opponent
+                # Player 2: opponent
             # "Sample_AIs/Random_AI/main.py"  
         ],
         capture_output=True,
@@ -26,7 +27,7 @@ for i in range(NUM_GAMES):
     error_output = result.stderr
 
     # Debug if needed
-    print(output)
+    # print(output)
 
     if "player 1 wins" in output:
         player1_wins += 1
@@ -34,7 +35,7 @@ for i in range(NUM_GAMES):
         player2_wins += 1
     elif "tie" in output:
         ties += 1
-    elif "crashed" in output:
+    elif "crashed" or "exception" in output:
         print("Crashed!", i+1)
         if error_output:
             print("stderr:\n", error_output)

@@ -1,11 +1,19 @@
-from random import randint
+import math
+import random
 from BoardClasses import Move
 from BoardClasses import Board
 #The following part should be completed by students.
 #Students can modify anything except the class name and exisiting functions and varibles.
 
-BEST_POINTS = 10000000
-WORST_POINTS = -10000000
+class MCTSNode:
+    def __init__(self, parent, move, player_to_move):
+        self.parent = parent            # parent node
+        self.move = move                # move applied at parent to reach this node
+        self.player = player_to_move    # side to move at this node
+        self.children = []              # list of MCTSNode
+        self.untried = []               # moves not expanded yet
+        self.visits = 0                 
+        self.wins = 0.0                 # wins from ROOT player's POV
 
 class StudentAI():
 
@@ -17,11 +25,169 @@ class StudentAI():
         self.board.initialize_game()
         self.color = ''
         self.opponent = {1:2,2:1}
-        self.color = 2
-        self.WIN_SCORE  = 100000
-        self.LOSS_SCORE = -100000
 
+    # ---------------------------------------------
+    # IS CAPTURE
+    # ---------------------------------------------
+    def _is_capture_move(self, mv : Move):
+        seq = getattr(mv, "seq", [])
+        for (r1, c1), (r2, c2) in zip(seq, seq[1:]):
+            if abs(r2 - r1) == 2 and abs(c2 - c1) == 2:
+                return True
+        return False
 
+    # ---------------------------------------------
+    # LEGAL MOVES
+    # ---------------------------------------------
+    def _legal_moves_flat(self, color):
+        groups = self.board.get_all_possible_moves(color)
+        moves = [m for g in groups for m in g]
+        cap = [m for m in moves if self._is_capture_move(m)]
+        quiet = [m for m in moves if not self._is_capture_move(m)]
+        random.shuffle(cap)
+        random.shuffle(quiet)
+        return cap + quiet
+    
+    # ---------------------------------------------
+    # WIN CHECK
+    # ---------------------------------------------
+    def _winner_or_none(self):
+        # return 1 or 2 if someone has won, else None
+        if self.board.is_win(1):
+            return 1
+        if self.board.is_win(2):
+            return 2
+        return None
+    
+    # ---------------------------------------------
+    # UCT SELECT
+    # ---------------------------------------------
+    def _uct_select_child(self, node, c=1.4):
+        logN = math.log(node.visits + 1)
+        def uct(ch):
+            if ch.visits == 0:
+                return float("inf")
+            exploit = ch.wins / ch.visits
+            explore = c * math.sqrt(logN / ch.visits)
+            return exploit + explore
+        return max(node.children, key = uct)
+    
+    # ---------------------------------------------
+    # EXPANSION
+    # ---------------------------------------------
+    def _expand(self, node):
+        if not node.untried:
+            node.untried = self._legal_moves_flat(node.player)
+        if not node.untried:
+            return node # terminal
+        mv = node.untried.pop()
+        self.board.make_move(mv, node.player)
+        child = MCTSNode(node, mv, self.opponent[node.player])
+        node.children.append(child)
+        return child
+    
+    # ---------------------------------------------
+    # ROLLOUT
+    # ---------------------------------------------
+    def _rollout(self, player, max_plies=20):
+        local = []
+
+        for _ in range(max_plies):
+            # terminal?
+            w = self._winner_or_none()
+            if w:
+                for mv, col in reversed(local): self.board.undo()
+                return w
+
+            # moves
+            moves = self._legal_moves_flat(player)
+            if not moves:
+                loser = player
+                winner = self.opponent[loser]
+                for mv, col in reversed(local): self.board.undo()
+                return winner
+
+            # FULL CAPTURE POLICY:
+            capture_moves = [m for m in moves if self._is_capture_move(m)]
+            if capture_moves:
+                # pick the longest capture chain
+                max_len = max(len(getattr(mv, "seq", [])) for mv in capture_moves)
+                best_caps = [mv for mv in capture_moves if len(getattr(mv, "seq", [])) == max_len]
+                mv = random.choice(best_caps)
+            else:
+                mv = random.choice(moves)
+
+            self.board.make_move(mv, player)
+            local.append((mv, player))
+            player = self.opponent[player]
+
+        # static fallback (correct perspective)
+        score = self.evaluate_color(self.color)
+        winner = self.color if score >= 0 else self.opponent[self.color]
+
+        for mv, col in reversed(local): self.board.undo()
+        return winner
+    
+    # ---------------------------------------------
+    # BACKPROP
+    # ---------------------------------------------
+    def _backprop(self, path, winner, root_player):
+        for node in path:
+            node.visits += 1
+            if winner == root_player:
+                node.wins += 1.0
+
+    # ---------------------------------------------
+    # MCTS SEARCH
+    # ---------------------------------------------
+    def _mcts_search(self, iterations = 300):
+        root = MCTSNode(parent=None, move=None, player_to_move=self.color)
+        root.untried = self._legal_moves_flat(root.player)
+
+        if not root.untried:
+            return Move([])
+
+        for _ in range(iterations):
+            node = root
+            path = [node]
+            applied = []   # moves applied on self.board in this iteration
+
+            # -------- SELECTION --------
+            while not node.untried and node.children:
+                node = self._uct_select_child(node)
+                if node.move is not None:
+                    # apply node's move (chosen by parent.player)
+                    self.board.make_move(node.move, node.parent.player)
+                    applied.append((node.move, node.parent.player))
+                path.append(node)
+
+            # -------- EXPANSION --------
+            if node.untried:
+                mv = node.untried.pop()
+                self.board.make_move(mv, node.player)
+                applied.append((mv, node.player))
+                child = MCTSNode(node, mv, self.opponent[node.player])
+                node.children.append(child)
+                node = child
+                path.append(node)
+
+            # -------- ROLLOUT --------
+            winner = self._rollout(node.player)
+
+            # -------- UNDO SELECTION + EXPANSION --------
+            for mv, col in reversed(applied):
+                self.board.undo()
+
+            # -------- BACKPROP --------
+            self._backprop(path, winner, root_player=self.color)
+
+        # choose move with most visits
+        best_child = max(root.children, key=lambda ch: ch.visits)
+        return best_child.move
+    
+    # ---------------------------------------------
+    # EVALUATION
+    # ---------------------------------------------
     def evaluate_color(self, color):
         """
         Returns a static evaluation of the board from the perspective of `color`.
@@ -29,118 +195,47 @@ class StudentAI():
         Negative score = bad for `color`.
         """
 
-        # convert 1/2 to black or white
-        my = 'B' if color == 1 else 'W'
-        opp = 'W' if color == 1 else 'B'
+        opp = self.opponent[color]
 
-        my_score = 0
-        opp_score = 0
+        my_score = opp_score = 0
 
-        # Material Points, kings are worth more
         for i in range(self.board.row):
             for j in range(self.board.col):
                 checker = self.board.board[i][j]
-                if checker.color == my:
-                    my_score += 3 if checker.is_king else 1
+                if not checker:
+                    continue
+
+                is_king = checker.is_king
+
+                if checker.color == color:
+                    my_score += 4 if is_king else 1
                 elif checker.color == opp:
-                    opp_score += 3 if checker.is_king else 1
+                    opp_score += 4 if is_king else 1
 
-        # Mobility points (the more ways you can move the more you get)
+        # mobility
         my_moves = self.board.get_all_possible_moves(color)
-        opp_moves = self.board.get_all_possible_moves(self.opponent[color])
-
+        opp_moves = self.board.get_all_possible_moves(opp)
         my_score += 0.1 * sum(len(g) for g in my_moves)
         opp_score += 0.1 * sum(len(g) for g in opp_moves)
 
         return my_score - opp_score
 
-    def minimax(self, color, alpha, beta, depth = 4) -> Move:
-        value, move = self.maxim(color, alpha, beta, depth)
-        return move
-
-    def maxim(self, color, alpha, beta, depth):
-        
-        if depth == 0:
-            return (self.evaluate_color(self.color), None)
-        if self.board.is_win(self.color): 
-            return (BEST_POINTS, None)
-        opp = self.opponent[self.color]
-        if self.board.is_win(opp): 
-            return (WORST_POINTS, None)
-        val = WORST_POINTS
-        best_move = None
-        moves = self.board.get_all_possible_moves(color)
-        if not moves:
-            return (WORST_POINTS, None)
-        for piece in moves:
-            for move in piece:
-                self.board.make_move(move, color)
-                v2, _ = self.minim(self.opponent[color], alpha, beta, depth-1)
-                self.board.undo()
-                if v2 > val:
-                    val, best_move = v2, move
-                alpha = max(alpha, v2)
-                if beta <= alpha:
-                    break
-        return val, best_move
-    
-    def minim(self, color, alpha, beta, depth):
-        opp = self.opponent[self.color]
-        if depth == 0:
-            return (self.evaluate_color(self.color), None)
-        if self.board.is_win(self.color): 
-            return (BEST_POINTS, None)
-        if self.board.is_win(opp): 
-            return (WORST_POINTS, None)
-        val = BEST_POINTS
-        best_move = None
-        moves = self.board.get_all_possible_moves(color)
-        if not moves:
-            return (BEST_POINTS, None)
-        for piece in moves:
-            for move in piece:
-                self.board.make_move(move, color)
-                v2, _ = self.maxim(self.opponent[color], alpha, beta, depth-1)
-                self.board.undo()
-                if v2 < val:
-                    val, best_move = v2, move
-                beta = min(beta, v2)
-                if beta <= alpha:
-                    break
-        return val, best_move
-
-
-    def eval_move(self, move, color):
-        self.board.make_move(move)
-        val = self.evaluate_color(color)
-        self.board.undo()
-        return val
-    
     def get_move(self, move):
-        if len(move) != 0:
-            self.board.make_move(move,self.opponent[self.color])
-        else:
-            self.color = 1
-        # moves = self.board.get_all_possible_moves(self.color)
-        # index = randint(0,len(moves)-1)
-        # inner_index =  randint(0,len(moves[index])-1)
-        # move = moves[index][inner_index]
-        # self.board.make_move(move,self.color)
-            
-        move = self.minimax(self.color, WORST_POINTS, BEST_POINTS, 4)
-
-        if move is None:
-            # Get all possible moves as fallback
-            possible = self.board.get_all_possible_moves(self.color)
-            
-            if possible and len(possible) > 0 and len(possible[0]) > 0:
-                # Use the first available move
-                move = possible[0][0]
-                print("WARNING: Minimax returned None, using fallback move")
+        # Determine your assigned color correctly.
+        if self.color == '':
+            if move:
+                # Opponent played first -> you are Player 2 (White)
+                self.color = 2
             else:
-                # No moves available at all - game is over
-                print("ERROR: No valid moves available!")
-                return None
-        self.board.make_move(move, self.color)
-        print(move)
-        return move
+                # No move history -> you are Player 1 (Black)
+                self.color = 1
+
+        # Apply opponent move
+        if move:
+            self.board.make_move(move, self.opponent[self.color])
+
+        # Run MCTS on the correct root color
+        best = self._mcts_search()
+
+        self.board.make_move(best, self.color)
+        return best
