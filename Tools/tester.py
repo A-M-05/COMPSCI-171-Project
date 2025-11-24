@@ -15,7 +15,7 @@ for i in range(NUM_GAMES):
             "8", "8", "3", "l",    # 8x8 board, 2-player local
             "../src/checkers-python/main.py",  # Player 1: your AI
             # "../src/copy/main.py",
-            "Sample_AIs/Random_AI/main.py",     # Player 2: opponent
+            "Sample_AIs/Poor_AI/main.py",     # Player 2: opponent
             # "Sample_AIs/Random_AI/main.py"  
         ],
         capture_output=True,
