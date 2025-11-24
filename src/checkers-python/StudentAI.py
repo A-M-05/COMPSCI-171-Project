@@ -7,6 +7,7 @@ from BoardClasses import Board
 BEST_POINTS = 10000000
 WORST_POINTS = -10000000
 
+
 class StudentAI():
 
     def __init__(self,col,row,p):
@@ -54,7 +55,7 @@ class StudentAI():
 
         return my_score - opp_score
 
-    def minimax(self, color, alpha, beta, depth = 4) -> Move:
+    def minimax(self, color, alpha, beta, depth = 5) -> Move:
         value, move = self.maxim(color, alpha, beta, depth)
         return move
 
