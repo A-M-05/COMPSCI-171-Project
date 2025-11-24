@@ -15,7 +15,7 @@ for i in range(NUM_GAMES):
             "8", "8", "3", "l",    # 8x8 board, 2-player local
             "../src/checkers-python/main.py",  # Player 1: your AI
             # "../src/copy/main.py",
-            "Sample_AIs/Poor_AI/main.py",     # Player 2: opponent
+            "Sample_AIs/main.py",     # Player 2: opponent
             # "Sample_AIs/Random_AI/main.py"  
         ],
         capture_output=True,
@@ -39,15 +39,23 @@ for i in range(NUM_GAMES):
         if error_output:
             print("stderr:\n", error_output)
     else:
-        print(f"UNEXPECTED OUTPUT IN GAME {i+1}:")
         print(result.stdout)
         if error_output:
             print("stderr:\n", error_output)
 
 # Compute percentages
 print("\n========== RESULTS ==========")
-print(f"Total games: {NUM_GAMES}")
-print(f"Player 1 wins: {player1_wins} ({player1_wins / NUM_GAMES * 100:.1f}%)")
-print(f"Player 2 wins: {player2_wins} ({player2_wins / NUM_GAMES * 100:.1f}%)")
-print(f"Ties: {ties} ({ties / NUM_GAMES * 100:.1f}%)")
+
+print("num games, p1 wins, p2 wins, ties")
+print(NUM_GAMES)
+print(player1_wins)
+print(player2_wins)
+print(ties);
+print((player1_wins + ties)/(player1_wins + player2_wins + ties));
+
+
+# print(f"Total games: {NUM_GAMES}")
+# print(f"Player 1 wins: {player1_wins} ({player1_wins / NUM_GAMES * 100:.1f}%)")
+# print(f"Player 2 wins: {player2_wins} ({player2_wins / NUM_GAMES * 100:.1f}%)")
+# print(f"Ties: {ties} ({ties / NUM_GAMES * 100:.1f}%)")
 
