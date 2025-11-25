@@ -29,7 +29,17 @@ class StudentAI():
     # ---------------------------------------------
     # IS CAPTURE
     # ---------------------------------------------
-    def _is_capture_move(self, mv : Move):
+    def _is_capture_move(self, mv : Move) -> bool:
+        """
+        Checks if a Move is a capture or not
+        
+        Args:
+            mv (Move): The move to check
+        
+        Returns:
+            bool: Capture move or not
+        """
+
         seq = getattr(mv, "seq", [])
         for (r1, c1), (r2, c2) in zip(seq, seq[1:]):
             if abs(r2 - r1) == 2 and abs(c2 - c1) == 2:
@@ -39,7 +49,18 @@ class StudentAI():
     # ---------------------------------------------
     # LEGAL MOVES
     # ---------------------------------------------
-    def _legal_moves_flat(self, color):
+    def _legal_moves_flat(self, color) -> list:
+        """
+        Returns all possible moves of a player shuffled, with a preference towards
+        capture moves over quiet moves.
+
+        Args:
+            color (int): The color of the player
+        
+        Returns:
+            list: List of all possible moves, flattened
+        """
+
         groups = self.board.get_all_possible_moves(color)
         moves = [m for g in groups for m in g]
         cap = [m for m in moves if self._is_capture_move(m)]
@@ -52,6 +73,14 @@ class StudentAI():
     # WIN CHECK
     # ---------------------------------------------
     def _winner_or_none(self):
+        """
+        Checks if a player has won or not
+
+        Returns:
+            int: 1 if player 1 won, 2 if player 2 won, 
+                 None if no one has won
+        """
+
         # return 1 or 2 if someone has won, else None
         if self.board.is_win(1):
             return 1
@@ -63,6 +92,17 @@ class StudentAI():
     # UCT SELECT
     # ---------------------------------------------
     def _uct_select_child(self, node, c=1.4):
+        """
+        Returns the UCT value of a MCTS Node
+
+        Args:
+            node (MCTSNode): node to calculate UCT for
+            c (float): exploration factor
+        
+        Returns:
+            UCT value of node
+        """
+
         logN = math.log(node.visits + 1)
         def uct(ch):
             if ch.visits == 0:
