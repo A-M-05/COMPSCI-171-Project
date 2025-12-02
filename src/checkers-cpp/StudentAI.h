@@ -4,6 +4,10 @@
 #include "Board.h"
 #include <cmath>
 #include <vector>
+#include <random>
+
+#define MAX_ROLLOUT_PLIES 20
+#define MAX_ITERATIONS 200
 #pragma once
 
 //The following part should be completed by students.
@@ -16,25 +20,6 @@ public:
 	virtual Move GetMove(Move board);
 };
 
-MCTSNode* selectChild(MCTSNode *node);
-float UCT(MCTSNode &node, int parentVisits, float C  = 1.4);
-
-
-bool isThereWinner(Board &board);
-int rollout(MCTSNode node);
-void backprop();
-vector<Move> flatten(Board &board, int color); // white is 2, black is 1
-
-
-/*
- mcts
- each node has a parent
- visted value
- win value 
- action leading to value
- children nodes
- untried moves
-*/
 struct MCTSNode{
     Board board;
 
@@ -43,14 +28,27 @@ struct MCTSNode{
     
     Move actionToGetHere;
     vector<Move> untriedMoves;
-    
+
     int currPlayer; // black is 1, white is 2
 
     int visits = 0;
     double wins = 0.0;
-
-    bool terminal = false;
-    bool fullyExpanded = false;
 };
+
+vector<Move> flatten(Board &board, int color); // white is 2, black is 1
+
+int isThereWinner(Board &board, int lastPlayer);
+
+double UCT(const MCTSNode &node, int parentVisits, double C  = 1.4);
+
+double evaluatePlayer(Board &board, int player);
+
+MCTSNode* selectChild(MCTSNode *node);
+
+MCTSNode* expandNode(MCTSNode *node);
+
+double rollout(const MCTSNode &node, int myPlayer);
+
+void backprop(MCTSNode *node, double result);
 
 #endif //STUDENTAI_H;
