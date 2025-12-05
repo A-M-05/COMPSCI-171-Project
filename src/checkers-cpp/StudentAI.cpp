@@ -22,7 +22,6 @@ Move StudentAI::GetMove(Move move)
 
     // set up MCTS Node for root node
     MCTSNode *root = new MCTSNode();
-    root->board = board;
     root->parent = nullptr;
     root->currPlayer = player;
     root->untriedMoves = flatten(board, player);
@@ -31,19 +30,31 @@ Move StudentAI::GetMove(Move move)
     root->children.clear();
 
     for(int i = 0; i < MAX_ITERATIONS; ++i){
+        Board simBoard = board;
         MCTSNode *node = root;
+        int currentPlayer = root->currPlayer;
+
         // selection phase
         while(node->untriedMoves.empty() && !node->children.empty()){
-            node = selectChild(node);
+            MCTSNode *child = selectChild(node);
+
+            // apply move from child to simBoard
+            Move m = child->actionToGetHere;
+            simBoard.makeMove(m, currentPlayer);
+
+            // switch player
+            currentPlayer = (currentPlayer == 1 ? 2 : 1);
+
+            node = child;
         }
 
         // expansion phase
         if(!node->untriedMoves.empty()){
-            node = expandNode(node);
+            node = expandNode(node, simBoard, currentPlayer);
         }
 
         // rollout phase
-        double result = rollout(*node, player);
+        double result = rollout(simBoard, currentPlayer, player);
 
         // back propagate result back up
         backprop(node, result);
@@ -120,7 +131,7 @@ int isThereWinner(Board &board, int lastPlayer){
 // ---------------------------------------------
 // UCT (Upper Confidence for Trees)
 // ---------------------------------------------
-double UCT(const MCTSNode &node, int parentVisits, double C = 1.4){
+double UCT(const MCTSNode &node, int parentVisits, double C){
     // if node is unvisited, UCT is infinity
     if(node.visits == 0){
         return INFINITY;
@@ -207,39 +218,37 @@ MCTSNode* selectChild(MCTSNode *node){
 // ---------------------------------------------
 // EXPAND NODE
 // ---------------------------------------------
-MCTSNode* expandNode(MCTSNode *node){
+MCTSNode* expandNode(MCTSNode *node, Board &simBoard, int &currentPlayer){
     Move move = node->untriedMoves.back(); // last move
     node->untriedMoves.pop_back(); // remove move
+
+    // apply move to simBoard
+    simBoard.makeMove(move, currentPlayer);
 
     MCTSNode *child = new MCTSNode();
     child->parent = node;
     child->actionToGetHere = move;
 
-    child->board = node->board;
-    child->board.makeMove(move, node->currPlayer); // who moved
-    child->currPlayer = (node->currPlayer == 1 ? 2 : 1); // next player to move
+    // switch players
+    currentPlayer = (currentPlayer == 1 ? 2 : 1);
+    child->currPlayer = currentPlayer;
 
-    child->untriedMoves = flatten(child->board, child->currPlayer);
+    // moves from new position
+    child->untriedMoves = flatten(simBoard, child->currPlayer);
     child->visits = 0;
     child->wins = 0.0;
 
-
     node->children.push_back(child);
-
     return child;
 }
 
 // ---------------------------------------------
 // ROLLOUT
 // ---------------------------------------------
-double rollout(const MCTSNode &node, int myPlayer){
-    // set temporary board to change
-    Board board = node.board;
-    int currentPlayer = node.currPlayer;
-
+double rollout(Board &simBoard, int currentPlayer, int myPlayer){
     for(int i = 0; i < MAX_ROLLOUT_PLIES; ++i){
         // generate all legal moves for currentPlayer
-        vector<Move> legalMoves = flatten(board, currentPlayer);
+        vector<Move> legalMoves = flatten(simBoard, currentPlayer);
         int legalMovesSize = legalMoves.size();
 
         // if no legal moves for myPlayer...
@@ -256,10 +265,10 @@ double rollout(const MCTSNode &node, int myPlayer){
         // choose random move and play it
         int randIndex = std::rand() % legalMoves.size();
         Move randomMove = legalMoves[randIndex];
-        board.makeMove(randomMove, currentPlayer);
+        simBoard.makeMove(randomMove, currentPlayer);
 
         // check if node is at a winning state
-        int winner = isThereWinner(board, currentPlayer);
+        int winner = isThereWinner(simBoard, currentPlayer);
         if(winner != -1){
             if(winner == myPlayer) { return 1.0; } // if myPlayer won, return 1.0
             else if(winner == 0) { return 0.5; } // tie case
@@ -271,7 +280,7 @@ double rollout(const MCTSNode &node, int myPlayer){
     }
 
     // max-depth reached, so evaluate board based on myPlayer
-    return evaluatePlayer(board, myPlayer);
+    return evaluatePlayer(simBoard, myPlayer);
 }
 
 // ---------------------------------------------

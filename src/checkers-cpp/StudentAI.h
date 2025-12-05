@@ -7,7 +7,7 @@
 #include <random>
 
 #define MAX_ROLLOUT_PLIES 20
-#define MAX_ITERATIONS 200
+#define MAX_ITERATIONS 1000
 #pragma once
 
 //The following part should be completed by students.
@@ -21,8 +21,6 @@ public:
 };
 
 struct MCTSNode{
-    Board board;
-
     MCTSNode *parent; // parent node
     vector<MCTSNode*> children; // children
     
@@ -45,9 +43,9 @@ double evaluatePlayer(Board &board, int player);
 
 MCTSNode* selectChild(MCTSNode *node);
 
-MCTSNode* expandNode(MCTSNode *node);
+MCTSNode* expandNode(MCTSNode *node, Board &simBoard, int &currentPlayer);
 
-double rollout(const MCTSNode &node, int myPlayer);
+double rollout(Board &simBoard, int currentPlayer, int myPlayer);
 
 void backprop(MCTSNode *node, double result);
 
