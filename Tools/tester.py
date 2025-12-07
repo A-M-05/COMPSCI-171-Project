@@ -22,6 +22,7 @@ for i in range(NUM_GAMES):
         capture_output=True,
         text=True
     )
+    
 
     end = time.time()     # <-- END TIMER
     elapsed = end - start
