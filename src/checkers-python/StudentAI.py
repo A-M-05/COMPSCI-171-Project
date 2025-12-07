@@ -15,6 +15,7 @@ class MCTSNode:
         self.visits = 0                 
         self.wins = 0.0                 # wins from ROOT player's POV
 
+
 class StudentAI():
 
     def __init__(self,col,row,p):
